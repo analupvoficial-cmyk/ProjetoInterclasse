@@ -78,6 +78,7 @@ def listar_times():
 
 @app.route("/times/novo", methods=["GET", "POST"])
 def novo_time():
+
     if request.method == "POST":
         # 1 - Pegar os valores digitados no form
         nome = request.form.get("nome")
