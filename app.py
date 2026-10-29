@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, g
+from flask import Flask, render_template, request, redirect, url_for, flash
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
 from banco import tabela_time, tabela_jogador, tabela_partida
 from database import *
+from database import Jogador
 
 app = Flask(__name__)
 app.secret_key = "chave-secreta-interclasse-2026"
@@ -29,6 +30,53 @@ def listar_jogadores():
     # Buscar todos os jogadores no banco
     jogadores = tabela_jogador.select_todos()
     return render_template("jogadores.html", jogadores=jogadores)
+
+@app.route("/jogadores/<id_jogador>", methods=["GET", "POST"])
+def editar_jogador(id_jogador):
+    # Buscar o jogador no banco
+    jogador = tabela_jogador.select_um(id_jogador)
+
+    # Salvar as alterações
+    if request.method == "POST":
+        # 1 - Pegar os valores digitados no form
+        nome = request.form.get("nome").strip()
+        numero_camisa = request.form.get("camisanumero") or None
+        posicao = request.form.get("posicao", "").strip()
+        time_id = request.form.get("time_id") or None
+
+        # 2 - Verificar se foi digitado
+        if not nome:
+            flash("Preencha o nome", "error")
+
+        elif not numero_camisa:
+            flash("Preencha a turma", "error")
+
+        elif not posicao:
+            flash("Preencha a posição", "error")
+
+        elif not time_id:
+            flash("Preencha o time", "error")
+
+        else:
+            jogador.nome = nome
+            jogador.numero_camisa = numero_camisa
+            jogador.posicao = posicao
+            jogador.time_id = int(time_id)
+            db_session.commit()
+
+            flash("Jogador editado com sucesso", "success")
+
+        return redirect(url_for("listar_jogadores"))
+
+
+
+    # Carregar as informações
+    jogadores = tabela_jogador.select_todos()
+    times = tabela_time.select_todos()
+    return render_template('jogadores.html' , jogadores=jogadores, editar=jogador, times=times)
+
+
+
 
 
 @app.route("/jogadores/novo", methods=["GET", "POST"])
@@ -114,6 +162,7 @@ def novo_time():
 @app.route("/partidas")
 def listar_partidas():
     partidas = tabela_partida.select_todos()
+
     return render_template("partidas.html", partidas=partidas)
 
 
