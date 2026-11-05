@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
-from banco import tabela_time, tabela_jogador, tabela_partida
+from banco import tabela_time, tabela_jogador, tabela_partida, tabela_movimentacao
 from database import *
 from database import Jogador
 
@@ -220,6 +220,46 @@ def detalhes_time(id_time):
         partidas=partidas,
         qtd_partidas=len(partidas)
     )
+
+@app.route("/movimentacao/nova/<int:jogador_id>")
+
+
+@app.route("/movimentacao/nova" , methods=["GET", "POST"])
+def nova_movimentacao(jogador_id=None):
+    if request.method == "POST":
+
+        #   1- pegar informações do formulário
+        jogador_id = request.form.get("jogador_id")
+        time_destino_id = request.form.get("time_destino_id")
+
+        #   2   verificar informações selecionadas
+        if not jogador_id:
+            flash("Selecione o jogador", "error")
+            return redirect(url_for("nova_movimentacao"))
+        if not time_destino_id:
+            flash("Selecione o time de destino", "error")
+            return redirect(url_for("nova_movimentacao"))
+
+         # 3    salvar  no banco
+        tabela_movimentacao.salvar(int(jogador_id), int(time_destino_id))
+        return redirect(url_for("nova_movimentacao"))
+
+    #   carregar dados para movimentação
+    movimentacao = tabela_movimentacao.select_todos()
+    jogadores = tabela_jogador.select_todos()
+    times = tabela_time.select_todos()
+
+    return render_template(
+        "movimentacoes.html",
+        movimentacoes=movimentacao,
+        jogadores=jogadores,
+        times=times,
+        jogador_selecionado=jogador_id
+    )
+
+
+
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5002)
